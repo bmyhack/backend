@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>服务器列表</title>
+    <link href="./layui/css/layui.css" rel="stylesheet">
+    <!-- 移除sql.js的引用 -->
+    <!-- <script src="./layui/sql.js"></script> -->
+    <style>
+        body { background: #f5f5f5; }
+        .full-screen-container {
+            margin: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,.1);
+            height: calc(100vh - 30px); /* 满屏高度 */
+        }
+        .layui-table-cell { font-size: 14px; }
+        .layui-table thead tr { background-color: #f8f9fa !important; }
+        .layui-table-page { text-align: center !important; }
+        .status-icon { margin-right: 5px; }
+        .layui-table-box { height: auto !important; } /* 表格容器高度 */
+    </style>
+</head>
+<body>
+<div class="layui-fluid full-screen-container">
+    <!-- 添加搜索输入框 -->
+    <div style="margin-bottom: 10px;">
+        <input type="text" id="searchInput" placeholder="任意字段均可过滤" class="layui-input">
+    </div>
+    <table id="serverTable" lay-filter="serverTable" lay-size="sm"></table>
+</div>
+
+<script src="./layui/layui.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    // 移除数据库相关代码
+    // const dbPromise = fetch('./sys.db')
+    //     .then(response => response.arrayBuffer())
+    //     .then(async arrayBuffer => {
+    //         const SQL = await initSqlJs({
+    //             locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+    //         });
+    //         return new SQL.Database(new Uint8Array(arrayBuffer));
+    //     });
+
+    layui.use(['table', 'laydate'], function(){
+        const table = layui.table;
+        const $ = layui.jquery;
+
+        table.render({
+            elem: '#serverTable',
+            loading: true,
+            cols: [[/* 初始化表头 */]]
+        });
+
+        // 通过API获取数据
+        const apiUrl = '/api/allserver';
+        console.log('发起API请求:', apiUrl); // 调试信息：输出请求的URL
+        fetch(apiUrl)
+            .then(response => {
+                console.log('API响应状态:', response.status); // 调试信息：输出响应状态码
+                if (!response.ok) {
+                    throw new Error(`HTTP 错误! 状态码: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('API响应数据:', data); // 调试信息：输出响应数据
+                const formattedData = data.map(item => ({
+                    id: item.id,
+                    customer: item.customer,
+                    locate: item.locate,
+                    platform: item.platform,
+                    supplier: item.supplier,
+                    devicetype: item.devicetype,
+                    serialnumber: item.serialnumber,
+                    ipmi: item.ipmi,
+                    last_check: new Date(item.timestamp * 1000).toLocaleString()
+                }));
+                console.log('格式化后的数据:', formattedData); // 调试信息：输出格式化后的数据
+                // 渲染表格
+                table.render({
+                    elem: '#serverTable',
+                    cols: [[
+                        { field: 'id', title: 'ID', width: 60 },
+                        { field: 'customer', title: '客户', width: 80 },
+                        { field: 'locate', title: '维护编号', minWidth: 100 },
+                        { field: 'platform', title: '平台', width: 100 },
+                        { field: 'supplier', title: '供应商', width: 100 },
+                        { field: 'devicetype', title: '设备类型', minWidth: 150 },
+                        { field: 'serialnumber', title: '序列号', minWidth: 180 },
+                        { field: 'ipmi', title: 'IPMI地址', minWidth: 160 },
+                        { 
+                            field: 'last_check', 
+                            title: '最后检查时间',
+                            minWidth: 200,
+                            templet: d => `<span>${new Date(d.last_check).toLocaleString()}</span>`
+                        }
+                    ]],
+                    data: formattedData,
+                    // 移除分页相关配置
+                    // page: { layout: ['prev', 'page', 'next', 'count'] },
+                    // limit: 15,
+                    // limits: [10, 15, 20],
+                    height: 'auto', // 自适应高度
+                    even: true,
+                    skin: 'line',
+                    toolbar: '#toolbarDemo', // 开启工具栏，此处可根据实际需求修改
+                    defaultToolbar: ['filter', 'exports', 'print'] // 显示筛选、导出、打印按钮
+                });
+
+                // 监听搜索输入框的输入事件
+                $('#searchInput').on('input', function() {
+                    const keyword = $(this).val().trim();
+                    const filteredData = formattedData.filter(item => {
+                        return Object.values(item).some(value => {
+                            return String(value).toLowerCase().includes(keyword.toLowerCase());
+                        });
+                    });
+                    table.reload('serverTable', {
+                        data: filteredData
+                    });
+                });
+
+                // 让光标默认聚焦在搜索框
+                document.getElementById('searchInput').focus();
+            })
+            .catch(error => {
+                console.error('数据加载失败:', error); // 调试信息：输出错误信息
+                layer.msg('数据加载失败', { icon: 2 });
+            });
+    });
+});
+</script>
+</body>
+</html>

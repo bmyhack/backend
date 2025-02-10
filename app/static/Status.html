@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>tty_node_status 列表</title>
+    <link href="./layui/css/layui.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f5f5f5;
+        }
+
+        .full-screen-container {
+            margin: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, .1);
+            height: calc(100vh - 30px);
+        }
+
+        .layui-table-cell {
+            font-size: 14px;
+        }
+
+        .layui-table thead tr {
+            background-color: #f8f9fa !important;
+        }
+
+        .layui-table-page {
+            text-align: center !important;
+        }
+
+        .status-icon {
+            margin-right: 5px;
+        }
+
+        .layui-table-box {
+            height: auto !important;
+        }
+        /* 新增样式，用于显示圆形图标 */
+        .status-circle {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        /* 绿色圆圈样式 */
+        .status-circle-green {
+            width: 15px;
+            height: 15px;
+            background-color: green;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* 红色圆圈样式 */
+        .status-circle-red {
+            width: 15px;
+            height: 15px;
+            background-color: red;
+            border-radius: 50%;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layui-fluid full-screen-container">
+        <div style="margin-bottom: 10px;">
+            <input type="text" id="searchInput" placeholder="任意字段均可过滤" class="layui-input">
+        </div>
+        <table id="ttyNodeStatusTable" lay-filter="ttyNodeStatusTable" lay-size="sm"></table>
+    </div>
+
+    <script src="./layui/layui.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            layui.use(['table', 'laydate'], function () {
+                const table = layui.table;
+                const $ = layui.jquery;
+
+                table.render({
+                    elem: '#ttyNodeStatusTable',
+                    loading: true,
+                    cols: [[]]
+                });
+
+                const apiUrl = '/api/tty_node_status';
+                console.log('发起API请求:', apiUrl);
+
+                fetch(apiUrl)
+                   .then(response => {
+                        console.log('API响应状态:', response.status);
+                        if (!response.ok) {
+                            throw new Error(`HTTP 错误! 状态码: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                   .then(data => {
+                        console.log('API响应数据:', data);
+
+                        const formattedData = data.map(item => ({
+                            status_id: item.status_id,
+                            node_id: item.node_id,
+                            power_status: item.power_status,
+                            health_state: item.health_state,
+                            health_CPU: item.health_CPU,
+                            health_MEM: item.health_MEM,
+                            health_PSU: item.health_PSU,
+                            health_FAN: item.health_FAN,
+                            health_HDD: item.health_HDD,
+                            last_check_time: new Date(item.last_check_time * 1000).toLocaleString()
+                        }));
+
+                        console.log('格式化后的数据:', formattedData);
+
+                        table.render({
+                            elem: '#ttyNodeStatusTable',
+                            cols: [
+                                [
+                                    { field: 'status_id', title: '状态ID', width: 80 },
+                                    { field: 'node_id', title: '维护编号', minWidth: 100 },
+                                    {
+                                        field: 'power_status',
+                                        title: '电源状态',
+                                        width: 100,
+                                        templet: d => {
+                                            const isPowerOn = d.power_status === 1;
+                                            const circleClass = isPowerOn ? 'status-circle-green' : 'status-circle-red';
+                                            return `<span class="status-circle ${circleClass}"></span>${d.power_status}`;
+                                        }
+                                    },
+                                    {
+                                        field: 'health_state',
+                                        title: '整体健康状态',
+                                        width: 120,
+                                        templet: d => {
+                                            const isHealthy = d.health_state === 0;
+                                            const circleClass = isHealthy ? 'status-circle-green' : 'status-circle-red';
+                                            return `<span class="status-circle ${circleClass}"></span>${d.health_state}`;
+                                        }
+                                    },
+                                    {
+                                        field: 'health_CPU',
+                                        title: 'CPU健康状态',
+                                        width: 120,
+                                        templet: d => {
+                                            const isHealthy = d.health_CPU === 0;
+                                            const circleClass = isHealthy ? 'status-circle-green' : 'status-circle-red';
+                                            return `<span class="status-circle ${circleClass}"></span>${d.health_CPU}`;
+                                        }
+                                    },
+                                    {
+                                        field: 'health_MEM',
+                                        title: '内存健康状态',
+                                        width: 120,
+                                        templet: d => {
+                                            const isHealthy = d.health_MEM === 0;
+                                            const circleClass = isHealthy ? 'status-circle-green' : 'status-circle-red';
+                                            return `<span class="status-circle ${circleClass}"></span>${d.health_MEM}`;
+                                        }
+                                    },
+                                    {
+                                        field: 'health_PSU',
+                                        title: '电源供应单元健康状态',
+                                        width: 180,
+                                        templet: d => {
+                                            const isHealthy = d.health_PSU === 0;
+                                            const circleClass = isHealthy ? 'status-circle-green' : 'status-circle-red';
+                                            return `<span class="status-circle ${circleClass}"></span>${d.health_PSU}`;
+                                        }
+                                    },
+                                    {
+                                        field: 'health_FAN',
+                                        title: '风扇健康状态',
+                                        width: 120,
+                                        templet: d => {
+                                            const isHealthy = d.health_FAN === 0;
+                                            const circleClass = isHealthy ? 'status-circle-green' : 'status-circle-red';
+                                            return `<span class="status-circle ${circleClass}"></span>${d.health_FAN}`;
+                                        }
+                                    },
+                                    {
+                                        field: 'health_HDD',
+                                        title: '硬盘健康状态',
+                                        width: 120,
+                                        templet: d => {
+                                            const isHealthy = d.health_HDD === 0;
+                                            const circleClass = isHealthy ? 'status-circle-green' : 'status-circle-red';
+                                            return `<span class="status-circle ${circleClass}"></span>${d.health_HDD}`;
+                                        }
+                                    },
+                                    {
+                                        field: 'last_check_time',
+                                        title: '最后检查时间',
+                                        minWidth: 200,
+                                        templet: d => `<span>${new Date(d.last_check_time).toLocaleString()}</span>`
+                                    }
+                                ]
+                            ],
+                            data: formattedData,
+                            height: 'auto',
+                            even: true,
+                            skin: 'line',
+                            toolbar: '#toolbarDemo',
+                            defaultToolbar: ['filter', 'exports', 'print']
+                        });
+
+                        $('#searchInput').on('input', function () {
+                            const keyword = $(this).val().trim();
+                            const filteredData = formattedData.filter(item => {
+                                return Object.values(item).some(value => {
+                                    return String(value).toLowerCase().includes(keyword.toLowerCase());
+                                });
+                            });
+                            table.reload('ttyNodeStatusTable', {
+                                data: filteredData
+                            });
+                        });
+
+                        document.getElementById('searchInput').focus();
+                    })
+                   .catch(error => {
+                        console.error('数据加载失败:', error);
+                        layer.msg('数据加载失败', { icon: 2 });
+                    });
+            });
+        });
+    </script>
+</body>
+</html>
