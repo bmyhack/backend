@@ -5,6 +5,8 @@ import os
 
 # 数据库配置
 DATABASE_URL = f"sqlite:///{os.path.join(os.path.dirname(__file__), '../db/sys.db')}"
+# core/config.py
+DATABASE_URL = "mysql+pymysql://root:Password123@mysql@172.16.206.130:3306/xcxj"
 
 # 其他配置
 DEBUG = True
