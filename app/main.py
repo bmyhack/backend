@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 # 应用程序内部模块导入
-from .routers import item_router, node_router
+from .routers import router
 
 # 创建FastAPI应用实例
 app = FastAPI()
@@ -15,8 +15,7 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # 包含路由
-app.include_router(item_router.router)
-app.include_router(node_router.router)
+app.include_router(router)
 
 @app.get("/")
 def read_root():

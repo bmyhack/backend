@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>服务器列表</title>
+    <title>节点列表</title>
     <link href="./layui/css/layui.css" rel="stylesheet">
     <!-- 移除sql.js的引用 -->
     <!-- <script src="./layui/sql.js"></script> -->
@@ -69,8 +69,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             })
             .then(data => {
                 console.log('API响应数据:', data); // 调试信息：输出响应数据
-                const formattedData = data.map(item => ({
-                    id: item.id,
+                const formattedData = data.map((item, index) => ({
+                    id: index + 1,
                     customer: item.customer,
                     locate: item.locate,
                     platform: item.platform,
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     devicetype: item.devicetype,
                     serialnumber: item.serialnumber,
                     ipmi: item.ipmi,
-                    last_check: new Date(item.timestamp * 1000).toLocaleString()
+                    timestamp: new Date(item.timestamp).getTime()
                 }));
                 console.log('格式化后的数据:', formattedData); // 调试信息：输出格式化后的数据
                 // 渲染表格
@@ -94,10 +94,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                         { field: 'serialnumber', title: '序列号', minWidth: 180 },
                         { field: 'ipmi', title: 'IPMI地址', minWidth: 160 },
                         { 
-                            field: 'last_check', 
+                            field: 'timestamp', 
                             title: '最后检查时间',
                             minWidth: 200,
-                            templet: d => `<span>${new Date(d.last_check).toLocaleString()}</span>`
+                            templet: d => `<span>${new Date(d.timestamp * 1000).toLocaleString()}</span>`
                         }
                     ]],
                     data: formattedData,
